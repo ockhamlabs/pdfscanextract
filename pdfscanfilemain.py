@@ -5,6 +5,7 @@ import pytesseract
 from PIL import Image as PILImage
 import io
 import json
+import requests  # Add this line to import the requests module
 from collections import Counter
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.util import ngrams
