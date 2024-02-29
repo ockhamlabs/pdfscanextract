@@ -118,13 +118,20 @@ def main():
     #st.title("PDF Processor for Text Extraction and PII Redaction")
     st.title("OCR Text Extraction")
 
-    uploaded_files = st.file_uploader("Choose image files", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
+      # Allow PDF and image file uploads
+    uploaded_files = st.file_uploader("Choose files", type=["pdf", "png", "jpg", "jpeg"], accept_multiple_files=True)
     if uploaded_files:
         for uploaded_file in uploaded_files:
-            bytes_data = uploaded_file.read()
-            image = Image.open(io.BytesIO(bytes_data))
-            text = extract_text_from_image(image)
-            st.write("Extracted Text:", text)
+            # Handle the file based on its type
+            file_type = uploaded_file.type
+            st.write(f"Uploaded {uploaded_file.name} with type {file_type}")
+            if file_type == "application/pdf":
+                # Process PDF file
+                st.write("Processing PDF...")
+                # Add your PDF processing logic here
+            elif file_type in ["image/png", "image/jpeg"]:
+                # Process image file
+                st.write("Processing image...")
     
     #uploaded_files = st.file_uploader("Choose PDF files", type="pdf", accept_multiple_files=True)
     #if uploaded_files:
