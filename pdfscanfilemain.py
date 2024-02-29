@@ -1,6 +1,7 @@
 import streamlit as st
 import PyPDF2
 import spacy
+nlp = spacy.load("en_core_web_sm")
 import pytesseract
 from PIL import Image as PILImage
 from wand.image import Image as WandImage
