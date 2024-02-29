@@ -1,7 +1,9 @@
 import streamlit as st
 import PyPDF2
 import spacy
-nlp = spacy.load("en_core_web_sm")
+import spacy_streamlit
+#nlp = spacy.load("en_core_web_sm")
+models = ["en_core_web_sm", "en_core_web_md"]
 import pytesseract
 from PIL import Image as PILImage
 from wand.image import Image as WandImage
@@ -19,7 +21,7 @@ import nltk
 nltk.download('punkt')
 
 # Initialize spaCy for NER
-nlp = spacy.load("en_core_web_sm")
+nlp = spacy_streamlit.load_model("en_core_web_sm")
 
 import spacy
 import sys
