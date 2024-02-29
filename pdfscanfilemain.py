@@ -21,25 +21,9 @@ import nltk
 nltk.download('punkt')
 
 # Initialize spaCy for NER
-nlp = spacy_streamlit.load_model("en_core_web_sm")
+#nlp = spacy_streamlit.load_model("en_core_web_sm")
+nlp = spacy.load('en')
 
-import spacy
-import sys
-
-def download_spacy_model(model_name="en_core_web_sm"):
-    """
-    Ensure spaCy model is downloaded.
-    """
-    try:
-        spacy.load(model_name)
-    except OSError:
-        print(f"Downloading the spaCy model {model_name}...")
-        from spacy.cli import download
-        download(model_name)
-        # Ensure the downloaded model is loaded
-        return spacy.load(model_name)
-
-nlp = download_spacy_model()
 
 
 def clean_text_for_pii(text):
