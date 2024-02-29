@@ -88,12 +88,15 @@ def pdf_to_images(pdf_path):
     images = convert_from_path(pdf_path)
     return images
 
-def extract_text_from_images(images):
-    texts = []
-    for image in images:
-        text = pytesseract.image_to_string(image)
-        texts.append(text)
-    return texts
+#def extract_text_from_images(images):
+    #texts = []
+    #for image in images:
+        #text = pytesseract.image_to_string(image)
+        #texts.append(text)
+    #return texts
+
+def extract_text_from_image(image):
+    return pytesseract.image_to_string(image)
 
 def process_pdf_content(pdf_bytes):
     images = convert_from_bytes(pdf_bytes)
@@ -112,18 +115,27 @@ def process_pdf_content(pdf_bytes):
     return all_pages_data
 
 def main():
-    st.title("PDF Processor for Text Extraction and PII Redaction")
+    #st.title("PDF Processor for Text Extraction and PII Redaction")
+    st.title("OCR Text Extraction")
 
-    uploaded_files = st.file_uploader("Choose PDF files", type="pdf", accept_multiple_files=True)
+    uploaded_files = st.file_uploader("Choose image files", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
     if uploaded_files:
-        results = []
         for uploaded_file in uploaded_files:
-            file_bytes = uploaded_file.read()
-            processed_data = process_pdf_content(file_bytes)
-            results.append({
-                "filename": uploaded_file.name,
-                "data": processed_data
-            })
+            bytes_data = uploaded_file.read()
+            image = Image.open(io.BytesIO(bytes_data))
+            text = extract_text_from_image(image)
+            st.write("Extracted Text:", text)
+    
+    #uploaded_files = st.file_uploader("Choose PDF files", type="pdf", accept_multiple_files=True)
+    #if uploaded_files:
+        #results = []
+        #for uploaded_file in uploaded_files:
+            #file_bytes = uploaded_file.read()
+            #processed_data = process_pdf_content(file_bytes)
+            #results.append({
+                #"filename": uploaded_file.name,
+                #"data": processed_data
+            #})
         
         # Combine all results into a single JSON string for download
         json_results = json.dumps(results, indent=2)
