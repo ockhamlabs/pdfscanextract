@@ -16,6 +16,7 @@ from nltk.util import ngrams
 import tempfile
 import os
 import shutil
+import pdf2image
 
 # Ensure NLTK data is available
 import nltk
