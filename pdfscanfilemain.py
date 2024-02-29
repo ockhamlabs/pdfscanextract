@@ -145,15 +145,14 @@ def process_pdf(pdf_bytes, pdf_name):
         return []
 
 def main():
-    st.title("PDF Processor with Online OCR")
-
+    st.title("PDF Processor for Text Extraction with OCR")
+    
     # File uploader for PDF files
     uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
     
     if uploaded_file is not None:
-        # Perform OCR on uploaded PDF file
-        extracted_text = perform_ocr(uploaded_file)
- 
+        # Read PDF file as bytes
+        pdf_bytes = uploaded_file.read()
         
         # Process the PDF and perform OCR
         extracted_data = process_pdf(pdf_bytes, uploaded_file.name)
@@ -171,7 +170,6 @@ def main():
         
         # Show link to download JSON file
         st.markdown(f"Download JSON output: [Download {uploaded_file.name}_output.json](/{output_file_path})")
-
 
 if __name__ == "__main__":
     main()
