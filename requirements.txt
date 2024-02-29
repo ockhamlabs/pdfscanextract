@@ -1,11 +1,10 @@
 pdf2image # If you switch from Wand to pdf2image for PDF to image conversion
 streamlit
 PyPDF2
-spacy==3.0.5  # Example, specify the version you tested with
 pytesseract
 Pillow
 Wand
 nltk
-https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.0.5/en_core_web_sm-3.0.5.tar.gz
-
-
+spacy>=3.0.0,<3.1.0
+en-core-web-sm==3.0.0
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.0.0/en_core_web_sm-3.0.0.tar.gz
