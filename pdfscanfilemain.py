@@ -50,13 +50,12 @@ def extract_ngrams_and_sentences(text):
     }
     return Counter(trigrams_list), three_four_word_sentences
 
-def pdf_to_images(pdf_file, resolution=300):
-    images = []
-    with WandImage(file=pdf_file, resolution=resolution) as img:
-        for page in img.sequence:
-            with WandImage(page) as page_img:
-                page_png = page_img.make_blob('png')
-                images.append(PILImage.open(io.BytesIO(page_png)))
+
+from pdf2image import convert_from_path
+import tempfile
+
+def pdf_to_images(pdf_path):
+    images = convert_from_path(pdf_path)
     return images
 
 def extract_text_from_images(images):
@@ -86,9 +85,10 @@ def main():
 
     uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
     if uploaded_file is not None:
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_pdf_file:
-            tmp_pdf_file.write(uploaded_file.read())
-            pdf_file_path = tmp_pdf_file.name
+        with tempfile.NamedTemporaryFile(suffix='.pdf') as temp_pdf:
+            temp_pdf.write(uploaded_file.getvalue())
+            images = pdf_to_images(temp_pdf.name)
+    # Process images as needed
 
         # Process the PDF
         with open(pdf_file_path, "rb") as pdf_file:
