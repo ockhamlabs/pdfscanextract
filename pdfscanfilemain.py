@@ -23,11 +23,11 @@ def clean_text_for_pii_nltk(text):
     # Simplified example; implement as needed
     return re.sub(r'\b\d+\b', '[NUMBER]', text)
 
-def perform_ocr(image_path):
+#def perform_ocr(image_path):
     """
-    Perform OCR on an image using Tesseract.
+    #Perform OCR on an image using Tesseract.
     """
-    return pytesseract.image_to_string(image_path)
+    #return pytesseract.image_to_string(image_path)
 
 def extract_ngrams_and_sentences(text):
     """
@@ -39,32 +39,41 @@ def extract_ngrams_and_sentences(text):
     # Extract sentences
     sentences = sent_tokenize(text)
     return {"trigrams": trigrams, "sentences": sentences}
+###
+import fitz  # PyMuPDF
+import io
+from PIL import Image
+import pytesseract
+import json
+
+def perform_ocr(image):
+    # Use pytesseract to perform OCR on the image
+    text = pytesseract.image_to_string(image)
+    return text
 
 def split_and_process_pdf(pdf_file, output_folder):
-    reader = PyPDF2.PdfReader(pdf_file)
+    doc = fitz.open(pdf_file)
     original_filename_prefix = os.path.splitext(os.path.basename(pdf_file.name))[0][:8]
 
-    for page_num in range(len(reader.pages)):
-        writer = PyPDF2.PdfWriter()
-        writer.add_page(reader.pages[page_num])
+    for page_num in range(len(doc)):
+        page = doc.load_page(page_num)
+        pix = page.get_pixmap()
+        img_bytes = pix.tobytes("ppm")
+        
+        # Convert the bytes to an image
+        image = Image.open(io.BytesIO(img_bytes))
+        
+        # Perform OCR on the image
+        text = perform_ocr(image)
+        cleaned_text = clean_text_for_pii_nltk(text)  # Assuming this function is defined elsewhere
+        
+        # Save the processed text to a JSON file
+        json_page_path = f"{output_folder}/json_outputs/{original_filename_prefix}_Page_{page_num+1:03d}.json"
+        with open(json_page_path, 'w') as json_file:
+            json.dump({"text": cleaned_text}, json_file)
 
-        pdf_page_path = f"{output_folder}/pdf_pages/{original_filename_prefix}_Page_{page_num+1:03d}.pdf"
-        # Save the split PDF page
-        with open(pdf_page_path, 'wb') as output_file:
-            writer.write(output_file)
 
-        # Convert PDF page to image
-        images = convert_from_path(pdf_page_path, fmt='jpeg')
-        for image in images:
-            # Perform OCR on the image
-            text = perform_ocr(image)
-            cleaned_text = clean_text_for_pii_nltk(text)
-            analysis_results = extract_ngrams_and_sentences(cleaned_text)
-
-            # Save the processed text and analysis to a JSON file
-            json_page_path = f"{output_folder}/json_outputs/{original_filename_prefix}_Page_{page_num+1:03d}.json"
-            with open(json_page_path, 'w') as json_file:
-                json.dump(analysis_results, json_file)
+#####
 
 def zip_files(directory, zip_name):
     zip_filename = os.path.join(directory, f"{zip_name}.zip")
