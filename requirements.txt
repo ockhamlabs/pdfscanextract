@@ -5,4 +5,4 @@ Pillow
 nltk
 spacy==3.2.0
 pdf2image # If you switch from Wand to pdf2image for PDF to image conversion
-azure-cognitiveservices-vision-computervision
+fritz
