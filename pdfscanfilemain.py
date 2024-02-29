@@ -68,6 +68,46 @@ def clean_text_for_pii_nltk(text):
     text = re.sub(r'\b\d+\b', '[NUMBER]', text)
     return text
 
+import streamlit as st
+import requests
+import io
+import tempfile
+import json
+from PyPDF2 import PdfFileReader
+from pdf2image import convert_from_path
+
+# Function to perform OCR using OCR.space API
+def perform_ocr(image_file):
+    # Endpoint URL for OCR.space API
+    api_url = 'https://api.ocr.space/parse/image'
+    
+    # API key (replace 'your-api-key' with your actual API key)
+    api_key = 'K84592797788957'
+    
+    # Prepare data for POST request
+    data = {
+        'apikey': api_key,
+        'language': 'eng',  # Language code for English
+        'isOverlayRequired': False,
+    }
+    
+    # Send POST request to OCR.space API with image file
+    files = {'file': image_file}
+    response = requests.post(api_url, data=data, files=files)
+    
+    # Check if request was successful
+    if response.status_code == 200:
+        # Parse JSON response
+        result = response.json()
+        
+        # Extract and return text
+        if 'ParsedResults' in result and result['ParsedResults']:
+            return result['ParsedResults'][0]['ParsedText']
+        else:
+            return "No text detected."
+    else:
+        return "Error performing OCR."
+
 
 def extract_ngrams_and_sentences(text):
     tokens = word_tokenize(text)
@@ -117,28 +157,24 @@ def process_pdf_content(pdf_bytes):
 def main():
     st.title("OCR Text Extraction")
 
-    uploaded_files = st.file_uploader("Choose files", type=["pdf", "png", "jpg", "jpeg"], accept_multiple_files=True)
+    # File uploader for PDF files
+    uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
     
-    if uploaded_files:
-        results = []  # Initialize results list
-        for uploaded_file in uploaded_files:
-            # Process based on file type
-            if uploaded_file.type == "application/pdf":
-                st.write(f"Processing PDF: {uploaded_file.name}")
-                file_bytes = uploaded_file.read()
-                processed_data = process_pdf_content(file_bytes)
-                results.append({
-                    "filename": uploaded_file.name,
-                    "data": processed_data
-                })
-            elif uploaded_file.type in ["image/png", "image/jpeg"]:
-                st.write(f"Processing image: {uploaded_file.name}")
-                image = PILImage.open(uploaded_file)
-                text = extract_text_from_image(image)
-                results.append({
-                    "filename": uploaded_file.name,
-                    "data": text
-                })
+    if uploaded_file is not None:
+        # Read PDF file as bytes
+        pdf_bytes = uploaded_file.read()
+        
+        # Process the PDF and perform OCR
+        extracted_data = process_pdf(pdf_bytes, uploaded_file.name)
+        
+        # Create JSON output
+        output_data = {
+            "pdf_name": uploaded_file.name,
+            "pages": extracted_data
+        }
+        
+        # Display extracted data as JSON
+        st.json(output_data)
         
         # Combine all results into a single JSON string for download
         json_results = json.dumps(results, indent=2)
