@@ -2,7 +2,6 @@ streamlit
 PyPDF2
 pytesseract
 Pillow
-Wand
 nltk
 spacy>=3.0,<4.0
 pdf2image # If you switch from Wand to pdf2image for PDF to image conversion
