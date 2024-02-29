@@ -67,14 +67,6 @@ def clean_text_for_pii_nltk(text):
     text = re.sub(r'\b\d+\b', '[NUMBER]', text)
     return text
 
-import streamlit as st
-import requests
-import io
-import tempfile
-import json
-from PyPDF2 import PdfFileReader
-from pdf2image import convert_from_path
-
 # Function to perform OCR using OCR.space API
 def perform_ocr(pdf_file):
     # Prepare data for POST request
