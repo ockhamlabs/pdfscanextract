@@ -11,7 +11,6 @@ import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.util import ngrams
 import re
-import PyMuPDF
 
 # Ensure NLTK data is available
 nltk.download('punkt', quiet=True)
