@@ -163,7 +163,7 @@ def main():
  
         
         # Process the PDF and perform OCR
-        #extracted_data = process_pdf(pdf_bytes, uploaded_file.name)
+        extracted_data = process_pdf(pdf_bytes, uploaded_file.name)
         
         # Create JSON output
         output_data = {
