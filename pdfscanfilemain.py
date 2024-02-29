@@ -138,7 +138,7 @@ def pdf_to_images(pdf_path):
 def extract_text_from_image(image):
     return pytesseract.image_to_string(image)
 
-def process_pdf_content(pdf_bytes):
+def process_pdf(pdf_bytes, pdf_name):
     images = convert_from_bytes(pdf_bytes)
     all_pages_data = []
     for page_num, image in enumerate(images, start=1):
