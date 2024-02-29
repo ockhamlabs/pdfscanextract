@@ -13,11 +13,11 @@ from nltk.util import ngrams
 import tempfile
 import os
 import shutil
-import pdf2image
+#import pdf2image
 import streamlit as st
-from pdf2image import convert_from_bytes
-import pytesseract
-from PIL import Image as PILImage
+#from pdf2image import convert_from_bytes
+#import pytesseract
+#from PIL import Image as PILImage
 import json
 from collections import Counter
 from nltk.tokenize import word_tokenize, sent_tokenize
@@ -121,7 +121,7 @@ def extract_ngrams_and_sentences(text):
     return Counter(trigrams_list), three_four_word_sentences
 
 
-from pdf2image import convert_from_path
+#from pdf2image import convert_from_path
 import tempfile
 
 def pdf_to_images(pdf_path):
