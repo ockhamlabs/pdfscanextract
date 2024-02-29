@@ -1,137 +1,105 @@
 import streamlit as st
-import azure.cognitiveservices.vision.computervision
-from azure.cognitiveservices.vision.computervision import ComputerVisionClient
-from azure.cognitiveservices.vision.computervision.models import OperationStatusCodes
-from msrest.authentication import CognitiveServicesCredentials
-from pdf2image import convert_from_bytes
-from collections import Counter
+import PyPDF2
+import os
+from tempfile import mkdtemp
+import shutil
+import zipfile
+import json
+from pdf2image import convert_from_path
+import pytesseract
+import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.util import ngrams
-import json
-import io
-import requests
 import re
 
 # Ensure NLTK data is available
-import nltk
-nltk.download('punkt')
+nltk.download('punkt', quiet=True)
 
 def clean_text_for_pii_nltk(text):
     """
     Clean the text of PII using NLTK for NER to identify and redact names, cities,
     and organizations, and also remove any numbers.
     """
-    # Tokenize and tag text
-    tokens = word_tokenize(text)
-    tags = nltk.pos_tag(tokens)
+    # Simplified example; implement as needed
+    return re.sub(r'\b\d+\b', '[NUMBER]', text)
 
-    # Perform NER
-    entities = nltk.ne_chunk(tags)
-    
-    # Helper function to traverse the named entities tree
-    def traverse_tree(tree):
-        entity_names = []
-        if hasattr(tree, 'label') and tree.label:
-            if tree.label() == 'PERSON' or tree.label() == 'GPE' or tree.label() == 'ORGANIZATION':
-                for child in tree:
-                    entity_names.append(' '.join([token for token, pos in child.leaves()]))
-        return entity_names
+def perform_ocr(image_path):
+    """
+    Perform OCR on an image using Tesseract.
+    """
+    return pytesseract.image_to_string(image_path)
 
-    # Redact named entities
-    for subtree in entities.subtrees(filter=lambda t: t.label() in ['PERSON', 'GPE', 'ORGANIZATION']):
-        for entity in traverse_tree(subtree):
-            text = text.replace(entity, "[REDACTED]")
-
-    # Redact numbers
-    text = re.sub(r'\b\d+\b', '[NUMBER]', text)
-    return text
-
-# Function to perform OCR using Azure Computer Vision API
-def perform_ocr(image_bytes, api_key, region, endpoint):
-    computervision_client = ComputerVisionClient(endpoint, CognitiveServicesCredentials(api_key))
-    raw_response = computervision_client.read_in_stream(image_bytes, raw=True)
-
-    # Get the operation location (URL with an ID at the end) from the response
-    operation_location_remote = raw_response.headers["Operation-Location"]
-    
-    # Extracting of text, wait 2 seconds, then get the result
-    import time
-    time.sleep(2)
-    result = computervision_client.get_read_result(operation_location_remote)
-    if result.status == OperationStatusCodes.succeeded:
-        text = ''
-        for text_result in result.analyze_result.read_results:
-            for line in text_result.lines:
-                text += line.text + '\n'
-        return text
-    else:
-        return "No text detected."
-
-# Function to extract n-grams and sentences
 def extract_ngrams_and_sentences(text):
+    """
+    Extract n-grams and sentences from the cleaned text.
+    """
     tokens = word_tokenize(text)
-    trigrams_list = list(ngrams(tokens, 3))
+    # Extract trigrams
+    trigrams = list(ngrams(tokens, 3)) if len(tokens) >= 3 else []
+    # Extract sentences
     sentences = sent_tokenize(text)
-    valid_sentences = [sentence for sentence in sentences if len(word_tokenize(sentence)) >= 3]
-    three_four_word_sentences = {
-        "three_words": [" ".join(word_tokenize(sentence)[:3]) for sentence in valid_sentences],
-        "four_words": [" ".join(word_tokenize(sentence)[:4]) for sentence in valid_sentences if len(word_tokenize(sentence)) >= 4]
-    }
-    return Counter(trigrams_list), three_four_word_sentences
+    return {"trigrams": trigrams, "sentences": sentences}
 
-def process_pdf(pdf_bytes, pdf_name, api_key, region, endpoint):
-    try:
-        images = convert_from_bytes(pdf_bytes)
-        all_pages_data = []
-        for page_num, image in enumerate(images, start=1):
-            text = perform_ocr(io.BytesIO(image.tobytes()), api_key, region, endpoint)
-            # Assuming clean_text_for_pii_nltk and extract_ngrams_and_sentences functions are defined elsewhere
+def split_and_process_pdf(pdf_file, output_folder):
+    reader = PyPDF2.PdfReader(pdf_file)
+    original_filename_prefix = os.path.splitext(os.path.basename(pdf_file.name))[0][:8]
+
+    for page_num in range(len(reader.pages)):
+        writer = PyPDF2.PdfWriter()
+        writer.add_page(reader.pages[page_num])
+
+        pdf_page_path = f"{output_folder}/pdf_pages/{original_filename_prefix}_Page_{page_num+1:03d}.pdf"
+        # Save the split PDF page
+        with open(pdf_page_path, 'wb') as output_file:
+            writer.write(output_file)
+
+        # Convert PDF page to image
+        images = convert_from_path(pdf_page_path, fmt='jpeg')
+        for image in images:
+            # Perform OCR on the image
+            text = perform_ocr(image)
             cleaned_text = clean_text_for_pii_nltk(text)
-            trigrams, sentences = extract_ngrams_and_sentences(cleaned_text)
-            page_data = {
-                "page_number": page_num,
-                "text": cleaned_text,
-                "trigrams": trigrams,
-                "sentences": sentences
-            }
-            all_pages_data.append(page_data)
-        return all_pages_data
-    except Exception as e:
-        st.error(f"Error processing PDF: {e}")
-        return []
+            analysis_results = extract_ngrams_and_sentences(cleaned_text)
+
+            # Save the processed text and analysis to a JSON file
+            json_page_path = f"{output_folder}/json_outputs/{original_filename_prefix}_Page_{page_num+1:03d}.json"
+            with open(json_page_path, 'w') as json_file:
+                json.dump(analysis_results, json_file)
+
+def zip_files(directory, zip_name):
+    zip_filename = os.path.join(directory, f"{zip_name}.zip")
+    with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for root, _, files in os.walk(directory):
+            for file in files:
+                file_path = os.path.join(root, file)
+                arcname = os.path.relpath(file_path, directory)
+                zipf.write(file_path, arcname=arcname)
+    return zip_filename
 
 def main():
-    st.title("PDF Processor for Text Extraction with OCR")
-    
-    # Access Azure Vision API secrets from Streamlit secrets manager
-    subscription_key = st.secrets["azure_subscription_key"]
-    region = st.secrets["azure_region"]
-    endpoint = st.secrets["azure_endpoint"]
+    st.title('PDF Splitter and OCR App using Tesseract')
 
-    # File uploader for PDF files
-    uploaded_files = st.file_uploader("Choose PDF files", type="pdf", accept_multiple_files=True)
-    
-    if uploaded_files:
-        for uploaded_file in uploaded_files:
-            # Read PDF file as bytes
-            pdf_bytes = uploaded_file.read()
-            
-            # Process the PDF and perform OCR
-            extracted_data = process_pdf(pdf_bytes, uploaded_file.name, subscription_key, region, endpoint)
-            
-            # Create JSON output
-            output_data = {
-                "pdf_name": uploaded_file.name,
-                "pages": extracted_data
-            }
-            
-            # Write JSON output to file
-            output_file_path = f"{uploaded_file.name}_output.json"
-            with open(output_file_path, "w") as json_file:
-                json.dump(output_data, json_file)
-            
-            # Show link to download JSON file
-            st.markdown(f"Download JSON output: [Download {uploaded_file.name}_output.json](/{output_file_path})")
+    uploaded_file = st.file_uploader("Choose a PDF file", type=["pdf"])
+    if uploaded_file is not None:
+        temp_dir = mkdtemp()
+        os.makedirs(os.path.join(temp_dir, "pdf_pages"), exist_ok=True)
+        os.makedirs(os.path.join(temp_dir, "json_outputs"), exist_ok=True)
+
+        # Split the PDF into individual pages and process each page
+        split_and_process_pdf(uploaded_file, temp_dir)
+
+        # Zip the split PDFs and JSON files
+        pdf_zip_path = zip_files(os.path.join(temp_dir, "pdf_pages"), "split_pdfs")
+        json_zip_path = zip_files(os.path.join(temp_dir, "json_outputs"), "json_outputs")
+
+        # Offer ZIP files for download
+        with open(pdf_zip_path, "rb") as f:
+            st.download_button("Download Split PDFs as ZIP", f, "split_pdfs.zip", "application/zip")
+        with open(json_zip_path, "rb") as f:
+            st.download_button("Download JSON Outputs as ZIP", f, "json_outputs.zip", "application/zip")
+
+        # Cleanup
+        shutil.rmtree(temp_dir)  # Remove temporary directory and files after downloading
 
 if __name__ == "__main__":
     main()
