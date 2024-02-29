@@ -41,7 +41,7 @@ def extract_ngrams_and_sentences(text):
     sentences = sent_tokenize(text)
     return {"trigrams": trigrams, "sentences": sentences}
 ###
-import PyMuPDF  # PyMuPDF
+import fitz  # PyMuPDF
 import io
 from PIL import Image
 import pytesseract
@@ -53,7 +53,7 @@ def perform_ocr(image):
     return text
 
 def split_and_process_pdf(pdf_file, output_folder):
-    doc = PyMuPDF.open(pdf_file)
+    doc = fitz.open(pdf_file)
     original_filename_prefix = os.path.splitext(os.path.basename(pdf_file.name))[0][:8]
 
     for page_num in range(len(doc)):
