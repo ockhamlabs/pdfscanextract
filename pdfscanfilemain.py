@@ -21,8 +21,8 @@ import nltk
 nltk.download('punkt')
 
 # Initialize spaCy for NER
-#nlp = spacy_streamlit.load_model("en_core_web_sm")
-nlp = spacy.load('en')
+nlp = spacy_streamlit.load_model("en_core_web_sm")
+#nlp = spacy.load('en')
 
 
 
