@@ -14,6 +14,14 @@ import tempfile
 import os
 import shutil
 import pdf2image
+import streamlit as st
+from pdf2image import convert_from_bytes
+import pytesseract
+from PIL import Image as PILImage
+import json
+from collections import Counter
+from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk.util import ngrams
 
 # Ensure NLTK data is available
 import nltk
@@ -87,12 +95,13 @@ def extract_text_from_images(images):
         texts.append(text)
     return texts
 
-def process_pdf(pdf_file):
-    images = pdf_to_images(pdf_file)
+def process_pdf_content(pdf_bytes):
+    images = convert_from_bytes(pdf_bytes)
     all_pages_data = []
     for page_num, image in enumerate(images, start=1):
-        text = extract_text_from_images([image])[0]  # Since it now returns a list of texts, take the first item
-        cleaned_text = clean_text_for_pii(text)
+        text = pytesseract.image_to_string(image)
+        # Assuming clean_text_for_pii_nltk and extract_ngrams_and_sentences functions are defined elsewhere
+        cleaned_text = clean_text_for_pii_nltk(text)
         trigrams, sentences = extract_ngrams_and_sentences(cleaned_text)
         page_data = {
             "page_number": page_num,
@@ -105,29 +114,23 @@ def process_pdf(pdf_file):
 def main():
     st.title("PDF Processor for Text Extraction and PII Redaction")
 
-    uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
-    if uploaded_file is not None:
-        with tempfile.NamedTemporaryFile(suffix='.pdf') as temp_pdf:
-            temp_pdf.write(uploaded_file.getvalue())
-            images = pdf_to_images(temp_pdf.name)
-    # Process images as needed
-
-        # Process the PDF
-        with open(pdf_file_path, "rb") as pdf_file:
-            processed_data = process_pdf(pdf_file)
+    uploaded_files = st.file_uploader("Choose PDF files", type="pdf", accept_multiple_files=True)
+    if uploaded_files:
+        results = []
+        for uploaded_file in uploaded_files:
+            file_bytes = uploaded_file.read()
+            processed_data = process_pdf_content(file_bytes)
+            results.append({
+                "filename": uploaded_file.name,
+                "data": processed_data
+            })
         
-        # Prepare and display the results
-        st.write("Processed Data:", processed_data)
-
-        # Optionally, convert processed data to JSON and allow download
-        json_results = json.dumps(processed_data, default=str)  # Using default=str to handle non-serializable objects gracefully
+        # Combine all results into a single JSON string for download
+        json_results = json.dumps(results, indent=2)
         st.download_button(label="Download JSON Results",
                            data=json_results,
                            file_name="processed_data.json",
                            mime="application/json")
-
-        # Clean up the temporary file
-        os.remove(pdf_file_path)
 
 if __name__ == "__main__":
     main()
