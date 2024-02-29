@@ -139,20 +139,24 @@ def extract_text_from_image(image):
     return pytesseract.image_to_string(image)
 
 def process_pdf(pdf_bytes, pdf_name):
-    images = convert_from_bytes(pdf_bytes)
-    all_pages_data = []
-    for page_num, image in enumerate(images, start=1):
-        text = pytesseract.image_to_string(image)
-        # Assuming clean_text_for_pii_nltk and extract_ngrams_and_sentences functions are defined elsewhere
-        cleaned_text = clean_text_for_pii_nltk(text)
-        trigrams, sentences = extract_ngrams_and_sentences(cleaned_text)
-        page_data = {
-            "page_number": page_num,
-            "trigrams": trigrams,
-            "sentences": sentences
-        }
-        all_pages_data.append(page_data)
-    return all_pages_data
+    try:
+        images = convert_from_bytes(pdf_bytes)
+        all_pages_data = []
+        for page_num, image in enumerate(images, start=1):
+            text = pytesseract.image_to_string(image)
+            # Assuming clean_text_for_pii_nltk and extract_ngrams_and_sentences functions are defined elsewhere
+            cleaned_text = clean_text_for_pii_nltk(text)
+            trigrams, sentences = extract_ngrams_and_sentences(cleaned_text)
+            page_data = {
+                "page_number": page_num,
+                "trigrams": trigrams,
+                "sentences": sentences
+            }
+            all_pages_data.append(page_data)
+        return all_pages_data
+    except Exception as e:
+        st.error(f"Error processing PDF: {e}")
+        return []
 
 def main():
     st.title("PDF Processor for Text Extraction with OCR")
