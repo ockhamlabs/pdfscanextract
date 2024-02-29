@@ -6,6 +6,7 @@ import spacy_streamlit
 models = ["en_core_web_sm", "en_core_web_md"]
 import pytesseract
 from PIL import Image as PILImage
+import wand
 from wand.image import Image as WandImage
 import io
 import json
