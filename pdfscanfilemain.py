@@ -115,34 +115,30 @@ def process_pdf_content(pdf_bytes):
     return all_pages_data
 
 def main():
-    #st.title("PDF Processor for Text Extraction and PII Redaction")
     st.title("OCR Text Extraction")
 
-      # Allow PDF and image file uploads
     uploaded_files = st.file_uploader("Choose files", type=["pdf", "png", "jpg", "jpeg"], accept_multiple_files=True)
-    if uploaded_files:
-        for uploaded_file in uploaded_files:
-            # Handle the file based on its type
-            file_type = uploaded_file.type
-            st.write(f"Uploaded {uploaded_file.name} with type {file_type}")
-            if file_type == "application/pdf":
-                # Process PDF file
-                st.write("Processing PDF...")
-                # Add your PDF processing logic here
-            elif file_type in ["image/png", "image/jpeg"]:
-                # Process image file
-                st.write("Processing image...")
     
-    #uploaded_files = st.file_uploader("Choose PDF files", type="pdf", accept_multiple_files=True)
-    #if uploaded_files:
-        #results = []
-        #for uploaded_file in uploaded_files:
-            #file_bytes = uploaded_file.read()
-            #processed_data = process_pdf_content(file_bytes)
-            #results.append({
-                #"filename": uploaded_file.name,
-                #"data": processed_data
-            #})
+    if uploaded_files:
+        results = []  # Initialize results list
+        for uploaded_file in uploaded_files:
+            # Process based on file type
+            if uploaded_file.type == "application/pdf":
+                st.write(f"Processing PDF: {uploaded_file.name}")
+                file_bytes = uploaded_file.read()
+                processed_data = process_pdf_content(file_bytes)
+                results.append({
+                    "filename": uploaded_file.name,
+                    "data": processed_data
+                })
+            elif uploaded_file.type in ["image/png", "image/jpeg"]:
+                st.write(f"Processing image: {uploaded_file.name}")
+                image = PILImage.open(uploaded_file)
+                text = extract_text_from_image(image)
+                results.append({
+                    "filename": uploaded_file.name,
+                    "data": text
+                })
         
         # Combine all results into a single JSON string for download
         json_results = json.dumps(results, indent=2)
