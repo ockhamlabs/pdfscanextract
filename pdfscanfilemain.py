@@ -1,8 +1,6 @@
 import streamlit as st
 import PyPDF2
 import spacy
-#nlp = spacy.load("en_core_web_sm")
-#models = ["en_core_web_sm", "en_core_web_md"]
 import pytesseract
 from PIL import Image as PILImage
 import io
@@ -13,13 +11,8 @@ from nltk.util import ngrams
 import tempfile
 import os
 import shutil
-#import pdf2image
+from pdf2image import convert_from_bytes  # Add this import statement
 import streamlit as st
-#from pdf2image import convert_from_bytes
-#import pytesseract
-#from PIL import Image as PILImage
-import json
-from collections import Counter
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.util import ngrams
 
