@@ -16,6 +16,12 @@ import streamlit as st
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.util import ngrams
 
+# OCR.space API endpoint
+api_url = 'https://api.ocr.space/parse/image'
+
+# API key (replace 'your-api-key' with your actual API key)
+api_key = 'K84592797788957'
+
 # Ensure NLTK data is available
 import nltk
 nltk.download('punkt')
@@ -70,13 +76,7 @@ from PyPDF2 import PdfFileReader
 from pdf2image import convert_from_path
 
 # Function to perform OCR using OCR.space API
-def perform_ocr(image_file):
-    # Endpoint URL for OCR.space API
-    api_url = 'https://api.ocr.space/parse/image'
-    
-    # API key (replace 'your-api-key' with your actual API key)
-    api_key = 'K84592797788957'
-    
+def perform_ocr(pdf_file):
     # Prepare data for POST request
     data = {
         'apikey': api_key,
@@ -84,8 +84,8 @@ def perform_ocr(image_file):
         'isOverlayRequired': False,
     }
     
-    # Send POST request to OCR.space API with image file
-    files = {'file': image_file}
+    # Send POST request to OCR.space API with PDF file
+    files = {'file': pdf_file}
     response = requests.post(api_url, data=data, files=files)
     
     # Check if request was successful
@@ -152,17 +152,18 @@ def process_pdf(pdf_bytes, pdf_name):
         return []
 
 def main():
-    st.title("PDF Processor for Text Extraction with OCR")
-    
+    st.title("PDF Processor with Online OCR")
+
     # File uploader for PDF files
     uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
     
     if uploaded_file is not None:
-        # Read PDF file as bytes
-        pdf_bytes = uploaded_file.read()
+        # Perform OCR on uploaded PDF file
+        extracted_text = perform_ocr(uploaded_file)
+ 
         
         # Process the PDF and perform OCR
-        extracted_data = process_pdf(pdf_bytes, uploaded_file.name)
+        #extracted_data = process_pdf(pdf_bytes, uploaded_file.name)
         
         # Create JSON output
         output_data = {
