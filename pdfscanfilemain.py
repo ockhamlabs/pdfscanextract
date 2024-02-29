@@ -43,7 +43,6 @@ def extract_ngrams_and_sentences(text):
 import fitz  # PyMuPDF
 import io
 from PIL import Image
-import pytesseract
 import json
 
 def perform_ocr(image):
