@@ -155,8 +155,8 @@ def process_pdf_content(pdf_bytes):
     return all_pages_data
 
 def main():
-    st.title("OCR Text Extraction")
-
+    st.title("PDF Processor for Text Extraction with OCR")
+    
     # File uploader for PDF files
     uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
     
@@ -173,15 +173,14 @@ def main():
             "pages": extracted_data
         }
         
-        # Display extracted data as JSON
-        st.json(output_data)
+        # Write JSON output to file
+        output_file_path = f"{uploaded_file.name}_output.json"
+        with open(output_file_path, "w") as json_file:
+            json.dump(output_data, json_file)
         
-        # Combine all results into a single JSON string for download
-        json_results = json.dumps(results, indent=2)
-        st.download_button(label="Download JSON Results",
-                           data=json_results,
-                           file_name="processed_data.json",
-                           mime="application/json")
+        # Show link to download JSON file
+        st.markdown(f"Download JSON output: [Download {uploaded_file.name}_output.json](/{output_file_path})")
+
 
 if __name__ == "__main__":
     main()
