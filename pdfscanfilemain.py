@@ -19,32 +19,47 @@ import pdf2image
 import nltk
 nltk.download('punkt')
 
-# Initialize spaCy for NER
-#nlp = spacy_streamlit.load_model("en_core_web_sm")
-#nlp = spacy.load("en_core_web_sm")
-#import spacy
-from spacy.cli import download
+import nltk
+from nltk import word_tokenize, pos_tag, ne_chunk
+from nltk.tree import Tree
+import re
 
-# Check if the model is already downloaded
-if not spacy.util.is_package("en_core_web_sm"):
-    # Download the model
-    download("en_core_web_sm")
+# Ensure necessary NLTK data is downloaded
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('maxent_ne_chunker')
+nltk.download('words')
 
-# Load the model
-nlp = spacy.load("en_core_web_sm")
-
-
-def clean_text_for_pii(text):
+def clean_text_for_pii_nltk(text):
     """
-    Clean the text of PII using NER to identify and redact names, cities, and organizations,
-    and also remove any numbers.
+    Clean the text of PII using NLTK for NER to identify and redact names, cities,
+    and organizations, and also remove any numbers.
     """
-    doc = nlp(text)
-    for ent in doc.ents:
-        if ent.label_ in ["PERSON", "GPE", "ORG"]:
-            text = text.replace(ent.text, "[REDACTED]")
+    # Tokenize and tag text
+    tokens = word_tokenize(text)
+    tags = pos_tag(tokens)
+
+    # Perform NER
+    entities = ne_chunk(tags)
+    
+    # Helper function to traverse the named entities tree
+    def traverse_tree(tree):
+        entity_names = []
+        if hasattr(tree, 'label') and tree.label:
+            if tree.label() == 'PERSON' or tree.label() == 'GPE' or tree.label() == 'ORGANIZATION':
+                for child in tree:
+                    entity_names.append(' '.join([token for token, pos in child.leaves()]))
+        return entity_names
+
+    # Redact named entities
+    for subtree in entities.subtrees(filter=lambda t: t.label() in ['PERSON', 'GPE', 'ORGANIZATION']):
+        for entity in traverse_tree(subtree):
+            text = text.replace(entity, "[REDACTED]")
+
+    # Redact numbers
     text = re.sub(r'\b\d+\b', '[NUMBER]', text)
     return text
+
 
 def extract_ngrams_and_sentences(text):
     tokens = word_tokenize(text)
