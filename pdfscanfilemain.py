@@ -22,22 +22,12 @@ nltk.download('punkt')
 nlp = spacy.load("en_core_web_sm")
 
 import spacy
-import subprocess
-import sys
 
-def download_spacy_model(model_name="en_core_web_sm"):
-    """
-    Download and load a spaCy model programmatically if not already installed.
-    """
-    try:
-        # Try loading the model if already installed
-        spacy.load(model_name)
-    except OSError:
-        # If not installed, download and install
-        print(f"Downloading spaCy model {model_name}...")
-        subprocess.check_call([sys.executable, "-m", "spacy", "download", model_name])
-
-download_spacy_model()  # Call this function at the start of your app scrip
+try:
+    nlp = spacy.load("en_core_web_sm")
+except IOError:
+    spacy.cli.download("en_core_web_sm")
+    nlp = spacy.load("en_core_web_sm")
 
 
 def clean_text_for_pii(text):
