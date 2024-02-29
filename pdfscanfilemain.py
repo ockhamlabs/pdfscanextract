@@ -11,6 +11,7 @@ import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.util import ngrams
 import re
+import PyMuPDF
 
 # Ensure NLTK data is available
 nltk.download('punkt', quiet=True)
@@ -40,7 +41,7 @@ def extract_ngrams_and_sentences(text):
     sentences = sent_tokenize(text)
     return {"trigrams": trigrams, "sentences": sentences}
 ###
-import pymupdf  # PyMuPDF
+import PyMuPDF  # PyMuPDF
 import io
 from PIL import Image
 import pytesseract
@@ -52,7 +53,7 @@ def perform_ocr(image):
     return text
 
 def split_and_process_pdf(pdf_file, output_folder):
-    doc = pymupdf.open(pdf_file)
+    doc = PyMuPDF.open(pdf_file)
     original_filename_prefix = os.path.splitext(os.path.basename(pdf_file.name))[0][:8]
 
     for page_num in range(len(doc)):
